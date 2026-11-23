@@ -13,6 +13,7 @@ const { Text } = Typography;
 
 const MAIN_CHANNEL = '__main__';
 const NO_CHANNELS = {};
+const DEFAULT_FORM_CONTEXT_WINDOW = 1048576;
 const PROVIDERS = [
     { value: 'openai_compatible', key: 'settingsProbe.compatible', fallback: '兼容 OpenAI 的接口' },
     { value: 'claude', key: 'settingsBasic.providerClaude', fallback: 'Claude（Anthropic Messages）' }
@@ -101,8 +102,9 @@ function summarizeContext(t, payload, fallbackWindow) {
     ];
 }
 
-function ProbeOutput({ state, defaultWindow }) {
+function ProbeOutput({ state, defaultWindow, model, onModelChange, disabled }) {
     const t = useT();
+    const pickerLabelId = useId();
     const { key, payload, error } = state;
     if (error) return <ErrorBanner error={error} />;
     if (!payload) return null;
@@ -119,15 +121,25 @@ function ProbeOutput({ state, defaultWindow }) {
             );
         }
         const models = Array.isArray(payload.models) ? payload.models : [];
+        const selectLabel = t('settingsBasic.modelsListSelectPlaceholder', null, '请选择模型');
         return (
             <div className="settings-probe-result">
-                <Space spacing={8}>
+                <Space wrap spacing={8}>
                     <Text>{t('settingsBasic.modelsListSuccess', { count: payload.count ?? models.length }, `已获取 ${payload.count ?? models.length} 个模型`)}</Text>
+                    <span id={pickerLabelId} hidden>{selectLabel}</span>
+                    {models.length > 0 && (
+                        <Select
+                            filter
+                            aria-labelledby={pickerLabelId}
+                            placeholder={selectLabel}
+                            value={models.includes(model) ? model : undefined}
+                            optionList={models.map(id => ({ value: id, label: id }))}
+                            onChange={onModelChange}
+                            disabled={disabled}
+                            className="settings-model-picker"
+                        />
+                    )}
                 </Space>
-                <div className="settings-model-tags">
-                    {models.slice(0, 120).map(model => <Tag key={String(model)} size="small">{String(model)}</Tag>)}
-                    {models.length > 120 && <Tag size="small" color="grey">…</Tag>}
-                </div>
             </div>
         );
     }
@@ -196,20 +208,25 @@ export default function ProbePanel({ config, canWrite, reloadConfig }) {
     const [drafts, setDrafts] = useState({});
     const draft = drafts[channelId] || {};
     const form = { ...baseline, ...draft };
+    const [listedDefaults, setListedDefaults] = useState(null);
+    const listedModel = listedDefaults && Object.hasOwn(listedDefaults, form.model) ? listedDefaults[form.model] : undefined;
     const sameModelEndpoint = ['model', 'base_url', 'provider'].every(field => form[field] === baseline[field]);
     const imageMode = draft.image_input ?? (sameModelEndpoint ? baseline.image_input : '');
-    const imageDefault = sameModelEndpoint ? config.image_input_defaults?.[legacy ? '' : channelId] : undefined;
+    const imageDefault = sameModelEndpoint ? config.image_input_defaults?.[legacy ? '' : channelId] : listedModel?.image_input;
     const imageEnabled = imageMode === 'enabled' || (imageMode !== 'disabled' && imageDefault === true);
-    const defaultWindow = config.context_window_defaults?.[legacy ? '' : channelId];
-    const useDefaultWindow = defaultWindow > 0 && !form.context_window && !Object.hasOwn(draft, 'context_window')
-        && ['base_url', 'model', 'context_profile'].every(field => form[field] === baseline[field]);
+    const defaultWindow = sameModelEndpoint && form.context_profile === baseline.context_profile
+        ? config.context_window_defaults?.[legacy ? '' : channelId]
+        : listedModel?.context_window;
+    const needsDefaultWindow = Boolean(form.model.trim()) && !form.context_window;
+    const useDefaultWindow = needsDefaultWindow && !Object.hasOwn(draft, 'context_window');
+    const matchesServerDefault = defaultWindow === DEFAULT_FORM_CONTEXT_WINDOW;
     const dirty = Object.keys(draft).length > 0;
     const [busy, setBusy] = useState('');
     const [state, setState] = useState(EMPTY_PROBE);
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState(null);
     const [applyPending, setApplyPending] = useState(false);
-    const locked = !canWrite || saving || busy === 'image';
+    const locked = !canWrite || saving || busy === 'image' || busy === 'list';
     const channelOptions = legacy
         ? [{ value: MAIN_CHANNEL, label: t('settingsProbe.mainChannel', null, '主模型通道') }]
         : modelChannelOptions(Object.entries(channels));
@@ -226,7 +243,11 @@ export default function ProbePanel({ config, canWrite, reloadConfig }) {
         });
     };
     const update = (key, value) => {
-        setState(EMPTY_PROBE);
+        const listChanged = ['provider', 'base_url', 'api_key', 'context_profile'].includes(key);
+        if (listChanged) setListedDefaults(null);
+        if (state.key !== 'list' || !state.payload?.success || listChanged) {
+            setState(EMPTY_PROBE);
+        }
         setDrafts(current => {
             const next = { ...current[channelId] };
             const modelFields = ['model', 'base_url', 'provider'];
@@ -238,12 +259,14 @@ export default function ProbePanel({ config, canWrite, reloadConfig }) {
         });
     };
     const selectChannel = id => {
+        setListedDefaults(null);
         setSelectedId(id);
         setState(EMPTY_PROBE);
         if (!applyPending) setSaveError(null);
     };
 
     const discardDraft = () => {
+        setListedDefaults(null);
         clearDraft();
         setState(EMPTY_PROBE);
         if (!applyPending) setSaveError(null);
@@ -275,6 +298,10 @@ export default function ProbePanel({ config, canWrite, reloadConfig }) {
             if (Object.hasOwn(changes, key)) changes[key] = numberValue(form[key]);
         }
 
+        if (dirty && needsDefaultWindow && !matchesServerDefault) {
+            changes.context_window = DEFAULT_FORM_CONTEXT_WINDOW;
+        }
+
         setSaving(true);
         try {
             await api.put('/config', { ai_channel: { channel_id: legacy ? '' : channelId, make_default: makeDefault, ...changes } });
@@ -304,13 +331,15 @@ export default function ProbePanel({ config, canWrite, reloadConfig }) {
     const run = async (key, path, body) => {
         if (locked || busy) return;
         setBusy(key);
+        if (key === 'list') setListedDefaults(null);
         setState(EMPTY_PROBE);
         try {
             const payload = await api.post(path, body);
+            if (key === 'list' && payload.success) setListedDefaults(payload.model_defaults || null);
             const detectedWindow = payload.context_window;
             const fillWindow = key === 'context' || (key === 'test' && ['', '0'].includes(form.context_window.trim()));
             if (fillWindow && payload.success && Number.isSafeInteger(detectedWindow) && detectedWindow > 0
-                && !payload.context_runtime_unknown && !(useDefaultWindow && detectedWindow === defaultWindow)) {
+                && !payload.context_runtime_unknown && !(useDefaultWindow && matchesServerDefault && detectedWindow === defaultWindow)) {
                 const value = String(detectedWindow);
                 setDrafts(current => {
                     const next = { ...current[channelId] };
@@ -473,7 +502,7 @@ export default function ProbePanel({ config, canWrite, reloadConfig }) {
                             <Text id={labelId} type="tertiary" size="small">{t(key, null, fallback)}</Text>
                             <Input
                                 aria-labelledby={labelId}
-                                value={String(showDefault ? defaultWindow : form[field])}
+                                value={String(showDefault ? DEFAULT_FORM_CONTEXT_WINDOW : form[field])}
                                 onChange={value => update(field, value)}
                                 inputMode="numeric"
                                 readOnly={locked}
@@ -533,6 +562,7 @@ export default function ProbePanel({ config, canWrite, reloadConfig }) {
                     loading={busy === 'list'}
                     disabled={locked || !!busy}
                     onClick={() => run('list', '/config/list-models', {
+                        context_profile: form.context_profile,
                         provider: form.provider,
                         channel_id: legacy ? undefined : channelId,
                         credential_scope: legacy ? 'openai' : undefined,
@@ -543,7 +573,13 @@ export default function ProbePanel({ config, canWrite, reloadConfig }) {
                     {t('settingsBasic.modelsList', null, '获取模型列表')}
                 </Button>
             </Space>
-            <ProbeOutput state={state} defaultWindow={useDefaultWindow ? defaultWindow : 0} />
+            <ProbeOutput
+                state={state}
+                defaultWindow={useDefaultWindow ? defaultWindow : 0}
+                model={form.model}
+                onModelChange={value => update('model', value)}
+                disabled={locked}
+            />
 
             <Collapse className="settings-audit-model">
                 <Collapse.Panel itemKey="audit-model" header={(
