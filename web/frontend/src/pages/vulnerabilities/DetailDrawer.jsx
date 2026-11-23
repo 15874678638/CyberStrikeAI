@@ -25,6 +25,41 @@ function Section({ title, extra, children }) {
     );
 }
 
+function RelatedFacts({ vulnerability }) {
+    const navigate = useNavigate();
+    const [facts, setFacts] = useState([]);
+    useEffect(() => {
+        if (!vulnerability?.project_id || !vulnerability?.id) {
+            setFacts([]);
+            return undefined;
+        }
+        let cancelled = false;
+        api.get(`/projects/${vulnerability.project_id}/facts`, { related_vulnerability_id: vulnerability.id, limit: 20 })
+            .then(data => { if (!cancelled) setFacts(Array.isArray(data) ? data : []); })
+            .catch(() => { if (!cancelled) setFacts([]); });
+        return () => { cancelled = true; };
+    }, [vulnerability?.project_id, vulnerability?.id]);
+    if (!facts.length) return null;
+    return (
+        <Section title="同一项目事实">
+            {facts.map(fact => (
+                <div key={fact.id} className="vulnerability-history-item">
+                    <Text>{fact.summary || fact.fact_key}</Text>
+                    {fact.source_conversation_id ? (
+                        <Button
+                            size="small"
+                            theme="borderless"
+                            onClick={() => navigate(`/chat?conversation=${encodeURIComponent(fact.source_conversation_id)}`)}
+                        >
+                            打开来源会话
+                        </Button>
+                    ) : null}
+                </div>
+            ))}
+        </Section>
+    );
+}
+
 function Narrative({ title, content, code }) {
     const text = String(content ?? '').trim();
     if (!text) return null;
@@ -119,10 +154,6 @@ export default function DetailDrawer({
         vuln.task_id ? { label: t('vulnerabilityPage.detailTaskId', null, '任务ID'), value: <span className="vulnerability-inline-code">{vuln.task_id}</span> } : null,
         vuln.task_queue_id ? { label: t('vulnerabilityPage.detailTaskQueueId', null, '任务队列ID'), value: <span className="vulnerability-inline-code">{vuln.task_queue_id}</span> } : null,
         vuln.case_id ? { label: t('vulnerabilityPage.mergedRecord', null, '已归并'), value: vuln.case_title || shortId(vuln.case_id, 12) } : null,
-        vuln.assessment_id ? {
-            label: t('vulnerabilityPage.assessmentTask', null, '深度测评'),
-            value: vuln.assessment_name || shortId(vuln.assessment_id, 12)
-        } : null,
         { label: t('vulnerabilityMd.labelCreated', null, '创建时间'), value: formatDateTime(vuln.created_at) },
         { label: t('vulnerabilityMd.labelUpdated', null, '更新时间'), value: formatDateTime(vuln.updated_at) }
     ].filter(Boolean) : [];
@@ -187,6 +218,7 @@ export default function DetailDrawer({
                         <Narrative title={t('vulnerabilityPage.detailEvidence', null, '证据 / POC')} content={vuln.evidence} code />
                         <Narrative title={t('vulnerabilityPage.detailRetestNotes', null, '复测方式')} content={vuln.retest_notes} />
                         <Narrative title={t('vulnerabilityPage.detailRetestLog', null, '复测记录')} content={vuln.retest_log} code />
+                        <RelatedFacts vulnerability={vuln} />
                         <Section title={t('vulnerabilityPage.inspector_history', null, '处置历史')}>
                             {history.length ? (
                                 <Timeline>
@@ -288,15 +320,6 @@ export default function DetailDrawer({
                                 </div>
                             ) : null}
                         </Section>
-
-                        {vuln.assessment_id ? (
-                            <Section title={t('vulnerabilityPage.assessmentTask', null, '深度测评')}>
-                                <div className="vulnerability-related-row">
-                                    <Text>{vuln.assessment_name || shortId(vuln.assessment_id, 12)}</Text>
-                                    {vuln.assessment_step_title ? <Text type="tertiary">{vuln.assessment_step_title}</Text> : null}
-                                </div>
-                            </Section>
-                        ) : null}
 
                         {members.length ? (
                             <Section title={vuln.case_title || t('vulnerabilityPage.mergedRecord', null, '已归并')}>

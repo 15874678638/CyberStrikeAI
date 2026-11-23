@@ -150,6 +150,68 @@ export async function downloadFile(path, { query, filename, method = 'GET', body
     return name;
 }
 
+/**
+ * 消费服务端 SSE 流。服务端每行以 `data: ` 前缀发送 JSON 对象。
+ * onEvent(payload) 逐条回调，返回 abort 函数。
+ */
+export function postStream(path, body, { onEvent, onError, onClose, signal } = {}) {
+    const controller = new AbortController();
+    if (signal) {
+        if (signal.aborted) controller.abort();
+        else signal.addEventListener('abort', () => controller.abort(), { once: true });
+    }
+    const headers = { 'Content-Type': 'application/json', Accept: 'text/event-stream' };
+    if (currentToken) headers.Authorization = `Bearer ${currentToken}`;
+
+    (async () => {
+        try {
+            const response = await fetch(buildUrl(path), {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(body || {}),
+                signal: controller.signal
+            });
+            if (response.status === 401) window.dispatchEvent(new CustomEvent('csai:unauthorized'));
+            if (!response.ok) {
+                const { message } = await readError(response);
+                throw new ApiError(message, { status: response.status, path });
+            }
+            if (!response.body) throw new ApiError('服务端未返回流式响应', { path });
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let closing = false;
+            while (!closing) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                let index;
+                while ((index = buffer.indexOf('\n')) >= 0) {
+                    const line = buffer.slice(0, index).replace(/\r$/, '');
+                    buffer = buffer.slice(index + 1);
+                    if (!line.startsWith('data:')) continue;
+                    const data = line.slice(5).trim();
+                    if (!data) continue;
+                    if (data === '[DONE]') { closing = true; break; }
+                    let parsed;
+                    try {
+                        parsed = JSON.parse(data);
+                    } catch (error) {
+                        continue;
+                    }
+                    onEvent?.(parsed);
+                }
+            }
+            onClose?.();
+        } catch (error) {
+            if (error.name === 'AbortError') { onClose?.(); return; }
+            onError?.(error);
+        }
+    })();
+
+    return () => controller.abort();
+}
+
 export function errorMessage(error, fallback = '操作失败') {
     if (!error) return fallback;
     if (typeof error === 'string') return error;

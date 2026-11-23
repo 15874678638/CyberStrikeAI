@@ -38,7 +38,7 @@ const PREVIEW_COLUMNS = (t) => [
     }
 ];
 
-export default function AssetImportModal({ visible, projects, onClose, onDone }) {
+export default function AssetImportModal({ visible, projects, defaultProjectId, onClose, onDone }) {
     const t = useT();
     const [format, setFormat] = useState('csv');
     const [text, setText] = useState('');
@@ -50,14 +50,15 @@ export default function AssetImportModal({ visible, projects, onClose, onDone })
     const parsed = useMemo(() => {
         if (!String(text || '').trim()) return { records: [], error: '' };
         try {
+            const options = { projects, projectId: defaultProjectId, source: 'manual-import' };
             const records = format === 'csv'
-                ? recordsFromCsv(text, { projects, source: 'manual-import' })
-                : recordsFromJson(text, { projects, source: 'manual-import' });
+                ? recordsFromCsv(text, options)
+                : recordsFromJson(text, options);
             return { records, error: '' };
         } catch (parseError) {
             return { records: [], error: parseError.message };
         }
-    }, [text, format, projects]);
+    }, [text, format, projects, defaultProjectId]);
 
     const records = parsed.records;
     const valid = records.filter(record => !record.error);

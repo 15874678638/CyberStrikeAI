@@ -75,7 +75,7 @@ export function visibleGraphCards(cy, { anchorId, allowCompact = () => true } = 
         const top = y - cardHeight / 2;
         if (left + cardWidth <= 0 || left >= width || top + cardHeight <= 0 || top >= height) continue;
         let box = { left, top, width: cardWidth, height: cardHeight };
-        // Keep the assessment goal readable in very small fitted overviews.
+        // Keep the goal label readable in small graph overviews.
         if (id === anchorId && cardWidth < 49) {
             box = { left: Math.max(3, left), top: y - 13, width: Math.min(108, width - Math.max(3, left)), height: 26 };
         }
