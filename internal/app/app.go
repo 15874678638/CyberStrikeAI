@@ -1512,27 +1512,26 @@ func setupRoutes(
 	// OpenAPI规范（需要认证，避免暴露API结构信息）
 	protected.GET("/openapi/spec", openAPIHandler.GetOpenAPISpec)
 
-	// API文档页面（公开访问，但需要登录后才能使用API）
-	router.GET("/api-docs", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "api-docs.html", nil)
-	})
+	registerFrontendRoutes(router)
+}
 
-	// 静态文件
-	router.Static("/static", "./web/static")
-	router.LoadHTMLGlob("web/templates/*")
-
-	// 默认工作台使用 Semi Design。既有操作页通过原模板提供。
+func registerFrontendRoutes(router *gin.Engine) {
+	// An in-place upgrade can leave classic assets on disk.
+	router.Static("/static/app", "./web/static/app")
+	router.Static("/static/i18n", "./web/static/i18n")
+	router.StaticFile("/static/favicon.ico", "./web/static/favicon.ico")
+	router.StaticFile("/static/logo.png", "./web/static/logo.png")
+	router.StaticFile("/static/site.webmanifest", "./web/static/site.webmanifest")
 	router.GET("/", func(c *gin.Context) {
 		c.Header("Cache-Control", "no-cache")
 		c.File("./web/static/app/index.html")
 	})
-
 	router.GET("/classic", func(c *gin.Context) {
-		version := app.config.Version
-		if version == "" {
-			version = "v1.0.0"
-		}
-		c.HTML(http.StatusOK, "index.html", gin.H{"Version": version})
+		// Browsers carry the original hash to a redirect without a fragment.
+		c.Redirect(http.StatusFound, "/")
+	})
+	router.GET("/api-docs", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/#/api-docs")
 	})
 }
 

@@ -1,9 +1,9 @@
 name: Self-update
 on:
   push:
-    paths: ['internal/update/**', 'internal/app/update_restart*', 'internal/security/auth*', 'internal/workflow/**', 'internal/config/**', 'internal/handler/**', 'internal/mcp/**', 'cmd/server/**', 'web/static/js/**', 'web/static/i18n/**', 'web/static/css/style.css', 'web/templates/index.html', 'upgrade.sh', 'run.sh', 'go.mod', 'go.sum', '.gitignore', '.github/workflows/self-update.yml']
+    paths: ['internal/update/**', 'internal/app/update_restart*', 'internal/security/auth*', 'internal/workflow/**', 'internal/config/**', 'internal/handler/**', 'internal/mcp/**', 'cmd/server/**', 'web/frontend/**', 'web/static/app/**', 'web/static/i18n/**', 'upgrade.sh', 'run.sh', 'go.mod', 'go.sum', '.gitignore', '.github/workflows/self-update.yml']
   pull_request:
-    paths: ['internal/update/**', 'internal/app/update_restart*', 'internal/security/auth*', 'internal/workflow/**', 'internal/config/**', 'internal/handler/**', 'internal/mcp/**', 'cmd/server/**', 'web/static/js/**', 'web/static/i18n/**', 'web/static/css/style.css', 'web/templates/index.html', 'upgrade.sh', 'run.sh', 'go.mod', 'go.sum', '.gitignore', '.github/workflows/self-update.yml']
+    paths: ['internal/update/**', 'internal/app/update_restart*', 'internal/security/auth*', 'internal/workflow/**', 'internal/config/**', 'internal/handler/**', 'internal/mcp/**', 'cmd/server/**', 'web/frontend/**', 'web/static/app/**', 'web/static/i18n/**', 'upgrade.sh', 'run.sh', 'go.mod', 'go.sum', '.gitignore', '.github/workflows/self-update.yml']
 permissions:
   contents: read
 jobs:
@@ -29,7 +29,7 @@ jobs:
       - run: go build ./...
       - name: Frontend regression tests
         shell: bash
-        run: node --test web/static/js/*.test.cjs
+        run: node --test web/frontend/tests/*.test.mjs
       - name: Shell syntax
         shell: bash
         run: bash -n run.sh upgrade.sh

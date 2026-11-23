@@ -335,7 +335,7 @@ ai:
 CyberStrikeAI/
 ├── cmd/                 # Web 服务、MCP stdio 入口及辅助工具
 ├── internal/            # Agent、MCP 核心、路由、C2（`internal/c2`）与执行器
-├── web/                 # 前端静态资源与模板
+├── web/                 # React + Semi Design 源码与构建产物
 ├── tools/               # YAML 工具目录（含 100+ 示例）
 ├── roles/               # 角色配置文件目录（含 12+ 预设安全测试角色）
 ├── skills/              # Agent Skills 目录（SKILL.md + 可选文件；示例 cyberstrike-pi-demo）

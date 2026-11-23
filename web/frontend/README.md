@@ -3,9 +3,8 @@
 CyberStrikeAI 默认从 `/` 打开 React + Semi Design 工作台。仪表盘、项目、资产、漏洞、文件、MCP 监控、
 知识、技能、角色与智能体查看、平台权限、系统设置和 API 文档共用现有登录会话与权限。
 
-原有操作页通过 `/classic` 打开。旧书签继续可用，例如 `/#projects?id=...`、
-`/#chat?conversation=...` 和 `/#system-update`。系统设置内的「更多设置」打开现有高级设置，
-API 文档内的「打开 API 控制台」打开原 API 控制台。
+旧入口 `/classic` 跳转到工作台，浏览器保留书签中的页面片段。`/api-docs` 跳转到 `/#/api-docs`。
+智能体与角色页提供查看功能。设置页提供 Semi 工作台现有的设置分区，API 文档页用于浏览接口定义。
 
 ## 开发与验证
 

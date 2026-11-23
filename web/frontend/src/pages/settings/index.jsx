@@ -4,9 +4,8 @@
  */
 import { useMemo } from 'react';
 import { useOutletContext, useSearchParams } from 'react-router-dom';
-import { Button, Tabs } from '@douyinfe/semi-ui';
+import { Tabs } from '@douyinfe/semi-ui';
 import { PageHeader } from '../../components/ui';
-import { useAuth } from '../../lib/auth';
 import { useT } from '../../lib/i18n';
 import BasicSection from './sections/BasicSection';
 import ModelsSection from './sections/ModelsSection';
@@ -21,7 +20,6 @@ const SECTION_KEYS = ['basic', 'models', 'token-usage', 'storage', 'update', 'au
 
 export default function SettingsPage() {
     const t = useT();
-    const { hasPermission } = useAuth();
     const { mobile } = useOutletContext();
     const [params, setParams] = useSearchParams();
 
@@ -42,9 +40,6 @@ export default function SettingsPage() {
             <PageHeader
                 title={t('settings.title', null, '系统设置')}
                 description={t('settings.pageDesc', null, '配置、模型探测、Token 用量、存储清理、审计日志与界面偏好；每个分区独立加载，单区失败不影响其他分区。')}
-                extra={hasPermission('config:read') && (
-                    <Button href="/classic#settings">{t('settingsProbe.moreSettings', null, '更多设置')}</Button>
-                )}
             />
             <Tabs
                 type="line"

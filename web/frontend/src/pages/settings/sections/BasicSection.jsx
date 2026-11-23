@@ -33,7 +33,7 @@ const EDITOR_HEADER = [
     '· 保存 = PUT /config（写入 config.yaml）+ POST /config/apply（重新加载）。',
     '· 只提交文本里有修改的段落，省略的段落沿用服务端配置。',
     '· storage（清理策略）不在 GET /config 里，请到「存储与更新」分区编辑。',
-    '· 此编辑器可保存模型、视觉、知识库和存储配置。其余配置请使用原有设置页面。'
+    '· 此编辑器可保存模型、视觉、知识库和存储配置。其余配置请查阅 config.yaml。'
 ].join('\n');
 
 export default function BasicSection() {
