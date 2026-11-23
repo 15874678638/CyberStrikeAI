@@ -1516,7 +1516,12 @@ func setupRoutes(
 }
 
 func registerFrontendRoutes(router *gin.Engine) {
-	router.Static("/static", "./web/static")
+	// An in-place upgrade can leave classic assets on disk.
+	router.Static("/static/app", "./web/static/app")
+	router.Static("/static/i18n", "./web/static/i18n")
+	router.StaticFile("/static/favicon.ico", "./web/static/favicon.ico")
+	router.StaticFile("/static/logo.png", "./web/static/logo.png")
+	router.StaticFile("/static/site.webmanifest", "./web/static/site.webmanifest")
 	router.GET("/", func(c *gin.Context) {
 		c.Header("Cache-Control", "no-cache")
 		c.File("./web/static/app/index.html")

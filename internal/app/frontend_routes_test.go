@@ -3,6 +3,7 @@ package app
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -22,6 +23,10 @@ func TestFrontendRoutes(t *testing.T) {
 		{"/classic", "/", http.StatusFound},
 		{"/api-docs", "/#/api-docs", http.StatusFound},
 		{"/static/favicon.ico", "", http.StatusOK},
+		{"/static/logo.png", "", http.StatusOK},
+		{"/static/site.webmanifest", "", http.StatusOK},
+		{"/static/i18n/en-US.json", "", http.StatusOK},
+		{"/static/app/", "", http.StatusOK},
 		{"/static/js/chat.js", "", http.StatusNotFound},
 	} {
 		t.Run(tc.path, func(t *testing.T) {
@@ -34,5 +39,22 @@ func TestFrontendRoutes(t *testing.T) {
 				t.Fatal("root must serve the revalidated Semi entry point")
 			}
 		})
+	}
+}
+
+func TestUpgradeDoesNotServeLeftoverClassicAssets(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := os.MkdirAll("web/static/js", 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile("web/static/js/chat.js", []byte("stale"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	router := gin.New()
+	registerFrontendRoutes(router)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/static/js/chat.js", nil))
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("leftover classic script returned %d", w.Code)
 	}
 }
