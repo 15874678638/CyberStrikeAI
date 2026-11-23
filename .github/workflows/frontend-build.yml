@@ -2,9 +2,9 @@ name: Semi frontend
 
 on:
   push:
-    paths: ['web/frontend/**', 'web/static/app/**', 'web/static/i18n/**', 'web/templates/index.html', 'internal/app/app.go', '.github/workflows/frontend-build.yml']
+    paths: ['web/frontend/**', 'web/static/app/**', 'web/static/i18n/**', 'internal/app/app.go', '.github/workflows/frontend-build.yml']
   pull_request:
-    paths: ['web/frontend/**', 'web/static/app/**', 'web/static/i18n/**', 'web/templates/index.html', 'internal/app/app.go', '.github/workflows/frontend-build.yml']
+    paths: ['web/frontend/**', 'web/static/app/**', 'web/static/i18n/**', 'internal/app/app.go', '.github/workflows/frontend-build.yml']
 
 permissions:
   contents: read

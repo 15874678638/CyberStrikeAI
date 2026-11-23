@@ -1187,7 +1187,7 @@ test.describe('resource administration', () => {
     });
 });
 
-test('API docs lists the project endpoint and links to the API console', async ({ page, mockApi }) => {
+test('API docs lists the project endpoint and shows its response schema', async ({ page, mockApi }) => {
     mockApi.respond('GET', '/api/openapi/spec', { json: {
         openapi: '3.0.0', paths: { '/api/projects/{id}': { get: {
             tags: ['项目'], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
@@ -1198,7 +1198,8 @@ test('API docs lists the project endpoint and links to the API console', async (
     await main.getByRole('button', { name: /projects/ }).click();
     await expect(main.locator('.api-docs-detail-path')).toHaveText('/api/projects/{id}');
     await expect(main.getByRole('tab', { name: '参数', exact: true })).toHaveAttribute('aria-selected', 'true');
-    await expect(main.getByRole('link', { name: '打开 API 控制台' })).toHaveAttribute('href', '/api-docs');
+    await main.getByRole('tab', { name: '响应', exact: true }).click();
+    await expect(main.getByRole('tab', { name: '响应', exact: true })).toHaveAttribute('aria-selected', 'true');
     expect(mockApi.writes()).toEqual([]);
 });
 

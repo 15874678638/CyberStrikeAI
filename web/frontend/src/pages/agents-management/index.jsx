@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button, Input, Space, Tag, Typography } from '@douyinfe/semi-ui';
 import { IconRefresh, IconSearch } from '@douyinfe/semi-icons';
 import { api } from '../../lib/http';
-import { useAuth } from '../../lib/auth';
 import { useT } from '../../lib/i18n';
 import { useResource } from '../../components/hooks';
 import { DataTable, ErrorBanner, JsonViewer, KeyValueList, MarkdownView, PageHeader, SectionCard, toastError, Drawer } from '../../components/ui';
@@ -11,8 +10,6 @@ const { Text } = Typography;
 
 export default function AgentsManagementPage() {
     const t = useT();
-    const { hasPermission } = useAuth();
-    const canWrite = hasPermission('agents:write');
     const [search, setSearch] = useState('');
     const [detail, setDetail] = useState(null);
 
@@ -60,10 +57,7 @@ export default function AgentsManagementPage() {
                 title={t('agents.title', null, '智能体管理')}
                 description={agents.data?.dir ? `目录：${agents.data.dir}` : '以 Markdown 文件定义的子智能体与编排器。'}
                 extra={(
-                    <Space>
-                        <Button icon={<IconRefresh />} onClick={() => agents.reload()} loading={agents.loading}>刷新</Button>
-                        {canWrite && <Button href="/classic#agents-management">管理智能体配置</Button>}
-                    </Space>
+                    <Button icon={<IconRefresh />} onClick={() => agents.reload()} loading={agents.loading}>刷新</Button>
                 )}
             />
             {agents.data?.error && <ErrorBanner error={agents.data.error} />}

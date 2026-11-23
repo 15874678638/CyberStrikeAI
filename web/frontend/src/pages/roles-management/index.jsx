@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button, Input, Space, Tag, Typography } from '@douyinfe/semi-ui';
 import { IconRefresh, IconSearch } from '@douyinfe/semi-icons';
 import { api } from '../../lib/http';
-import { useAuth } from '../../lib/auth';
 import { useT } from '../../lib/i18n';
 import { useResource } from '../../components/hooks';
 import {
@@ -13,8 +12,6 @@ const { Text } = Typography;
 
 export default function RolesManagementPage() {
     const t = useT();
-    const { hasPermission } = useAuth();
-    const canManage = hasPermission('roles:write roles:delete');
     const [search, setSearch] = useState('');
 
     const roles = useResource(() => api.get('/roles'), []);
@@ -51,10 +48,7 @@ export default function RolesManagementPage() {
                 title={t('roles.title', null, '角色管理')}
                 description="角色定义对话的系统提示词、可用工具与绑定工作流。"
                 extra={(
-                    <Space>
-                        <Button icon={<IconRefresh />} onClick={() => roles.reload()} loading={roles.loading}>刷新</Button>
-                        {canManage && <Button href="/classic#roles-management">管理已有角色配置</Button>}
-                    </Space>
+                    <Button icon={<IconRefresh />} onClick={() => roles.reload()} loading={roles.loading}>刷新</Button>
                 )}
             />
             <SectionCard title={`角色（${rows.length}）`}>

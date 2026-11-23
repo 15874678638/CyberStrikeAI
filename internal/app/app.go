@@ -1512,27 +1512,21 @@ func setupRoutes(
 	// OpenAPI规范（需要认证，避免暴露API结构信息）
 	protected.GET("/openapi/spec", openAPIHandler.GetOpenAPISpec)
 
-	// API文档页面（公开访问，但需要登录后才能使用API）
-	router.GET("/api-docs", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "api-docs.html", nil)
-	})
+	registerFrontendRoutes(router)
+}
 
-	// 静态文件
+func registerFrontendRoutes(router *gin.Engine) {
 	router.Static("/static", "./web/static")
-	router.LoadHTMLGlob("web/templates/*")
-
-	// 默认工作台使用 Semi Design。既有操作页通过原模板提供。
 	router.GET("/", func(c *gin.Context) {
 		c.Header("Cache-Control", "no-cache")
 		c.File("./web/static/app/index.html")
 	})
-
 	router.GET("/classic", func(c *gin.Context) {
-		version := app.config.Version
-		if version == "" {
-			version = "v1.0.0"
-		}
-		c.HTML(http.StatusOK, "index.html", gin.H{"Version": version})
+		// Browsers carry the original hash to a redirect without a fragment.
+		c.Redirect(http.StatusFound, "/")
+	})
+	router.GET("/api-docs", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/#/api-docs")
 	})
 }
 

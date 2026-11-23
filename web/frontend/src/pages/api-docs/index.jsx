@@ -80,12 +80,7 @@ export default function ApiDocsPage() {
             <PageHeader
                 title={t('apiDocs.title', null, 'API 文档')}
                 description={spec?.info?.description || 'CyberStrikeAI 开放接口'}
-                extra={(
-                    <Space wrap>
-                        <Button icon={<IconRefresh />} onClick={load} loading={loading}>{t('common.refresh', null, '刷新')}</Button>
-                        <Text link={{ href: '/api-docs' }}>{t('apiDocs.openConsole', null, '打开 API 控制台')}</Text>
-                    </Space>
-                )}
+                extra={<Button icon={<IconRefresh />} onClick={load} loading={loading}>{t('common.refresh', null, '刷新')}</Button>}
             />
             <div className="api-docs-layout">
                 <Card className="api-docs-sidebar" bordered={false}>
