@@ -1,4 +1,4 @@
-import { conversationListFixture, test, expect, visit, ready, label, UI_PERMISSIONS, PROJECT, CONVERSATION, ASSESSMENT, STAMP } from './fixtures.mjs';
+import { conversationListFixture, test, expect, visit, ready, label, UI_PERMISSIONS, PROJECT, CONVERSATION, STAMP } from './fixtures.mjs';
 
 test('token usage: summary values render with daily rows and update to zero after filtering', async ({ page, mockApi }, testInfo) => {
     const summary = {
@@ -1187,7 +1187,7 @@ test.describe('resource administration', () => {
     });
 });
 
-test('API docs uses the completed URL of a read-only project endpoint', async ({ page, mockApi }) => {
+test('API docs lists the project endpoint and links to the API console', async ({ page, mockApi }) => {
     mockApi.respond('GET', '/api/openapi/spec', { json: {
         openapi: '3.0.0', paths: { '/api/projects/{id}': { get: {
             tags: ['项目'], parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
@@ -1196,45 +1196,10 @@ test('API docs uses the completed URL of a read-only project endpoint', async ({
     } });
     const main = await visit(page, 'api-docs');
     await main.getByRole('button', { name: /projects/ }).click();
-    await main.getByRole('textbox', { name: '路径参数 id' }).fill('fixture-project');
-    await main.getByRole('button', { name: /发送请求/ }).click();
-    await expect.poll(() => mockApi.calls('GET', '/api/projects/fixture-project').length).toBeGreaterThan(0);
-});
-
-test('a legacy acceptance link opens the selected criterion and writes revision-checked evidence', async ({ page, mockApi }) => {
-    const id = ASSESSMENT.id;
-    const path = '/api/deep-assessments/' + id + '/acceptance';
-    mockApi.respond('GET', '/api/deep-assessments/' + id + '/events', { json: { events: [] } });
-    mockApi.respond('GET', path, { json: { rows: [{
-        number: 2, text: '复核示例报告', status: 'missing', fact_ids: [], receipt_ids: [], revision: 3
-    }] } });
-    mockApi.respond('GET', path + '/sources', { json: { sources: [
-        { id: 'fixture-fact', title: '示例观察事实', state: 'observed' }
-    ] } });
-    mockApi.respond('PUT', path + '/2', { json: { saved: true } });
-    await page.goto('/static/app/#deep-assessments?assessment_id=' + id + '&tab=acceptance&criterion=2');
-    const main = await ready(page);
-    await expect(main.getByRole('tab', { name: /验收/ })).toHaveAttribute('aria-selected', 'true');
-    const criterion = page.getByRole('dialog').filter({ hasText: '验收项 2' });
-    const edit = criterion.getByRole('button', { name: '编辑证据关联' });
-    await edit.click();
-    const editor = page.getByRole('dialog', { name: '编辑验收证据关联' });
-    await expect(editor).toHaveClass(/semi-sidesheet-inner/);
-    await page.keyboard.press('Escape');
-    await expect(editor).toHaveCount(0);
-    await expect(criterion).toBeVisible();
-    await edit.click();
-    const evidence = editor.getByRole('checkbox', { name: '关联 示例观察事实' });
-    await evidence.press('Space');
-    await expect(evidence).toBeChecked();
-    const review = editor.getByRole('checkbox', { name: '标记待人工复核' });
-    await review.press('Space');
-    await expect(review).toBeChecked();
-    await editor.getByRole('textbox', { name: '复核说明' }).fill('示例说明');
-    await editor.getByRole('button', { name: '保存证据关联' }).click();
-    await expect.poll(() => mockApi.calls('PUT', path + '/2')[0]?.body).toEqual({
-        revision: 3, fact_ids: ['fixture-fact'], receipt_ids: [], needs_review: true, review_note: '示例说明'
-    });
+    await expect(main.locator('.api-docs-detail-path')).toHaveText('/api/projects/{id}');
+    await expect(main.getByRole('tab', { name: '参数', exact: true })).toHaveAttribute('aria-selected', 'true');
+    await expect(main.getByRole('link', { name: '打开 API 控制台' })).toHaveAttribute('href', '/api-docs');
+    expect(mockApi.writes()).toEqual([]);
 });
 
 test.describe('sign-in integration', () => {

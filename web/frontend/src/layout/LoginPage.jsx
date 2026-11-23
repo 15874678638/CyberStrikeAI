@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Banner, Button, Card, Form, Typography } from '@douyinfe/semi-ui';
-import { IconArticle, IconBranch, IconBriefcase, IconLock, IconShield, IconUser } from '@douyinfe/semi-icons';
+import { IconArticle, IconBriefcase, IconLock, IconShield, IconUser } from '@douyinfe/semi-icons';
 import { useAuth } from '../lib/auth';
 import { useT } from '../lib/i18n';
 import { errorMessage } from '../lib/http';
@@ -38,7 +38,6 @@ export default function LoginPage() {
                     <Paragraph type="tertiary">{t('login.intro', null, '从目标梳理到证据归档，在一个工作台中完成你的安全研究。')}</Paragraph>
                     <div className="cs-login-features">
                         <div className="cs-login-feature"><IconBriefcase size="large" /><div><strong>{t('login.projectTitle', null, '围绕项目协作')}</strong>{t('login.projectHint', null, '跨会话共享目标、上下文与研究进展')}</div></div>
-                        <div className="cs-login-feature"><IconBranch size="large" /><div><strong>{t('login.assessmentTitle', null, '让探索持续推进')}</strong>{t('login.assessmentHint', null, '规划、执行与人工复核，始终保持可控')}</div></div>
                         <div className="cs-login-feature"><IconArticle size="large" /><div><strong>{t('login.evidenceTitle', null, '以证据支撑结论')}</strong>{t('login.evidenceHint', null, '保留发现、来源与验收记录')}</div></div>
                     </div>
                 </div>

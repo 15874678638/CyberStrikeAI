@@ -1,5 +1,6 @@
 /** 项目详情：概览统计、标签页与事实弹窗/详情侧栏的统一入口。 */
 import { useCallback, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Space, Tabs, Tag, Typography } from '@douyinfe/semi-ui';
 import { IconRefresh } from '@douyinfe/semi-icons';
 import { api } from '../../lib/http';
@@ -14,18 +15,21 @@ import ConversationsPanel from './conversations-panel';
 import SettingsPanel from './settings-panel';
 import FactFormModal from './fact-form';
 import FactDetailSheet from './fact-detail';
+import AssetEditorModal from '../asset-library/components/AssetEditorModal';
 import { errorProp } from './helpers';
 
 const { Title, Text, Paragraph } = Typography;
 
 export default function ProjectDetail({ projectId, tab, refreshToken = 0, onTabChange, onChanged, onDeleted }) {
     const t = useT();
+    const navigate = useNavigate();
     const { hasPermission } = useAuth();
     const canWrite = hasPermission('project:write');
     const canDelete = hasPermission('project:delete');
 
     const [revision, setRevision] = useState(0);
     const [factForm, setFactForm] = useState({ visible: false, factKey: '' });
+    const [addingAsset, setAddingAsset] = useState(false);
     const [factDetail, setFactDetail] = useState('');
 
     const project = useResource(() => api.get(`/projects/${projectId}`), [projectId, revision, refreshToken]);
@@ -86,7 +90,15 @@ export default function ProjectDetail({ projectId, tab, refreshToken = 0, onTabC
                             {' · '}ID: <code>{projectId}</code>
                         </Text>
                     </div>
-                    <Space>
+                    <Space wrap>
+                        {current && hasPermission('asset:write') && (
+                            <Button onClick={() => setAddingAsset(true)}>{t('assets.addAsset', null, '新增资产')}</Button>
+                        )}
+                        {current && hasPermission('asset:read') && (
+                            <Button onClick={() => navigate(`/asset-library?project_id=${encodeURIComponent(projectId)}`)}>
+                                {t('assets.projectAssets', null, '项目资产')}
+                            </Button>
+                        )}
                         <Button
                             icon={<IconRefresh />}
                             theme="borderless"
@@ -146,6 +158,11 @@ export default function ProjectDetail({ projectId, tab, refreshToken = 0, onTabC
                     onChanged={bump}
                     onDeleted={id => onDeleted?.(id)}
                 />
+            )}
+
+            {addingAsset && current && hasPermission('asset:write') && (
+                <AssetEditorModal visible defaultProjectId={projectId} fixedProject
+                    projects={[current]} onClose={() => setAddingAsset(false)} />
             )}
 
             <FactFormModal

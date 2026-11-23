@@ -22,7 +22,8 @@ test.describe('audit model connection test', () => {
             mockApi.respond('POST', '/api/config/test-audit-model', { json: { success: true, model: entry.model || 'configured-model', latency_ms: 123 } });
             await page.goto('/static/app/#/settings?section=models');
             const main = await ready(page);
-            const card = main.locator('.settings-probe-card').filter({ has: page.getByText('审计模型连接测试', { exact: true }) });
+            await main.getByText('审计模型', { exact: true }).click();
+            const card = main.locator('.settings-audit-model').locator('.settings-probe-card');
             await expect(card.getByText(entry.protocol, { exact: true })).toBeVisible();
             await expect(card.getByLabel('API 地址', { exact: true })).toHaveValue(entry.url);
             await expect(card.getByLabel('API 密钥', { exact: true })).toHaveAttribute('type', 'password');
@@ -51,7 +52,8 @@ test('audit model viewer cannot edit or start a test', async ({ page, mockApi })
     mockApi.respond('GET', '/api/config', { json: { openai: mainModel, tools: [] } });
     await page.goto('/static/app/#/settings?section=models');
     const main = await ready(page);
-    const card = main.locator('.settings-probe-card').filter({ has: page.getByText('审计模型连接测试', { exact: true }) });
+    await main.getByText('审计模型', { exact: true }).click();
+    const card = main.locator('.settings-audit-model').locator('.settings-probe-card');
     await expect(card.getByLabel('API 地址', { exact: true })).toHaveAttribute('readonly', '');
     await expect(card.getByRole('button', { name: '测试审计模型', exact: true })).toBeDisabled();
     expect(mockApi.writes()).toEqual([]);

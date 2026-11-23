@@ -51,7 +51,6 @@ export default function InfoCollectPage() {
     const [importing, setImporting] = useState(false);
     const [projects, setProjects] = useState([]);
     const [projectId, setProjectId] = useState('');
-    const [collectionName, setCollectionName] = useState('');
 
     const config = providerConfig(form.provider);
     const providerLabel = config.label;
@@ -151,8 +150,7 @@ export default function InfoCollectPage() {
                 fields,
                 provider: result?.provider || form.provider,
                 query: result?.query || form.query,
-                projectId,
-                collectionName
+                projectId
             });
             if (!outcome.assets.length) {
                 toastWarning(t('assets.noValidImportTarget', null, '所选结果中没有可入库的有效资产目标'));
@@ -164,10 +162,7 @@ export default function InfoCollectPage() {
                 }, `已新增 ${outcome.created} 条，更新 ${outcome.updated} 条，跳过 ${outcome.invalidCount} 条无有效目标的结果`)
                 : t('assets.importDone', { created: outcome.created, updated: outcome.updated },
                     `已新增 ${outcome.created} 条，更新 ${outcome.updated} 条`);
-            const saved = outcome.collection?.name
-                ? `，已写入资产库，并记下检索结果「${outcome.collection.name}」`
-                : '';
-            toastSuccess(`${message}${saved}`);
+            toastSuccess(message);
             setSelectedKeys([]);
         } catch (importError) {
             toastError(importError, t('assets.importFailed', null, '资产入库失败'));
@@ -294,17 +289,10 @@ export default function InfoCollectPage() {
                     <Space className="info-collect-form-row">
                         <Select
                             value={projectId}
-                            optionList={[{ value: '', label: '不归入项目集合' }, ...projects.map(item => ({ value: item.id, label: item.name || item.id }))]}
+                            optionList={[{ value: '', label: '不归入项目' }, ...projects.map(item => ({ value: item.id, label: item.name || item.id }))]}
                             placeholder="归入项目"
                             style={{ width: 220 }}
                             onChange={value => setProjectId(value || '')}
-                        />
-                        <Input
-                            value={collectionName}
-                            disabled={!projectId}
-                            placeholder="集合名称，留空则使用查询语句"
-                            style={{ width: 280 }}
-                            onChange={setCollectionName}
                         />
                     </Space>
 

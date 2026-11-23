@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Input, Spin, Tag, Tree, Typography } from '@douyinfe/semi-ui';
-import { IconSearch } from '@douyinfe/semi-icons';
+import { IconFolderOpen, IconSearch } from '@douyinfe/semi-icons';
 import { SEVERITY_CODES, severityText } from './shared';
 
 const { Text } = Typography;
@@ -13,18 +13,23 @@ function groupLabel(t, node) {
     if (node.label) return node.label;
     if (node.key.startsWith('host:')) return t('vulnerabilityPage.unknownHost');
     if (node.key.startsWith('queue:')) return t('vulnerabilityPage.taskQueueGroup', { id: node.key.slice(6) });
-    if (node.key.startsWith('assessment:')) return node.key.slice(11);
     return t('vulnerabilityPage.viewNoTask');
 }
 
 function treeNode(t, node) {
     const name = groupLabel(t, node);
+    const hasChildren = Boolean(node.children?.length);
     return {
         key: node.key,
         value: node.key,
         label: (
             <span className="vulnerability-group-node">
-                <span className="vulnerability-group-name" title={name}>{name}</span>
+                <span
+                    className={hasChildren ? 'vulnerability-group-name vulnerability-group-name--parent' : 'vulnerability-group-name'}
+                    title={name}
+                >
+                    {name}
+                </span>
                 <Tag size="small" color="grey">{node.count}</Tag>
             </span>
         ),
@@ -70,7 +75,11 @@ export function GroupNavigator({ t, mode, groups, selection, loading, search, on
                     value={selection || 'all'}
                     onSelect={key => onSelect(key === 'all' ? '' : key)}
                     expandedKeys={expandedKeys}
-                    expandIcon={() => <span className="semi-tree-empty-icon" aria-hidden="true" />}
+                    expandIcon={({ className }) => (
+                        <span className={className} aria-hidden="true">
+                            <IconFolderOpen size="small" />
+                        </span>
+                    )}
                     expandAction={false}
                     blockNode
                 />
